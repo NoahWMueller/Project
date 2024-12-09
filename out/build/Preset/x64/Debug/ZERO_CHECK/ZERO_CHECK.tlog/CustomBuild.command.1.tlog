@@ -1,0 +1,10 @@
+^C:\USERS\NMUELLER\DESKTOP\PROJECT\OUT\BUILD\PRESET\CMAKEFILES\8F56A5D535F6B3AC3A2C98C83A28C1DD\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/nmueller/Desktop/Project -BC:/Users/nmueller/Desktop/Project/out/build/Preset --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/nmueller/Desktop/Project/out/build/Preset/Project.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
