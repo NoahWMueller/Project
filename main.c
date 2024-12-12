@@ -36,7 +36,7 @@ void configureSerialPort(HANDLE hSerial) {
 
 void sendATCommand(HANDLE hSerial, const char *atCommand) {
     DWORD bytesWritten;
-    printf("ATcommand: %s",atCommand);
+    printf(">> %s",atCommand);
     if (!WriteFile(hSerial, atCommand, (DWORD)strlen(atCommand), &bytesWritten, NULL)) {
         printf("Error writing to COM port\n");
         return;
@@ -47,7 +47,7 @@ void recieveResponse(HANDLE hSerial) {
     char buffer[128];
     DWORD bytesRead;
     DWORD timeout = 1000;  // Timeout for ReadFile in milliseconds
-    printf("Response: \n");
+    printf("<< \n");
     while (1) {
         // Set the timeout for ReadFile to prevent blocking forever
         COMMTIMEOUTS timeouts;
