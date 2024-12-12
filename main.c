@@ -79,7 +79,7 @@ void wait(int milliseconds) {
 int main() {
     // Open the COM port
 
-    const char* commandList[] = {"AT+REBOOT\r\n","AT+LINECFG=1\r\n"};
+    const char* commandList[] = {"AT+REBOOT\r\n"};
     size_t num_elements = sizeof(commandList) / sizeof(commandList[0]);
 
     HANDLE hSerial = CreateFile("COM9", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
