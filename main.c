@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include <time.h>
 
 void configureSerialPort(HANDLE hSerial) {
     DCB dcbSerialParams = {0};
@@ -35,26 +36,53 @@ void configureSerialPort(HANDLE hSerial) {
 
 void sendATCommand(HANDLE hSerial, const char *atCommand) {
     DWORD bytesWritten;
+    printf("ATcommand: %s",atCommand);
     if (!WriteFile(hSerial, atCommand, (DWORD)strlen(atCommand), &bytesWritten, NULL)) {
         printf("Error writing to COM port\n");
         return;
     }
+}
 
-        // Read response from the module
+void recieveResponse(HANDLE hSerial) {
     char buffer[128];
     DWORD bytesRead;
-    if (ReadFile(hSerial, buffer, sizeof(buffer) - 1, &bytesRead, NULL)) {
-        buffer[bytesRead] = '\0';  // Null-terminate the buffer
-        printf("Response: %s\n", buffer);
-    } else {
-        printf("Error reading from COM port\n");
+    DWORD timeout = 1000;  // Timeout for ReadFile in milliseconds
+    printf("Response: \n");
+    while (1) {
+        // Set the timeout for ReadFile to prevent blocking forever
+        COMMTIMEOUTS timeouts;
+        GetCommTimeouts(hSerial, &timeouts);  // Get the current timeouts
+        timeouts.ReadTotalTimeoutConstant = timeout;  // Set a read timeout
+        SetCommTimeouts(hSerial, &timeouts);  // Apply the timeout settings
+
+        if (ReadFile(hSerial, buffer, sizeof(buffer) - 1, &bytesRead, NULL)) {
+            if (bytesRead > 0) {
+                buffer[bytesRead] = '\0';  // Null-terminate the buffer
+                printf("%s", buffer);
+            } else {
+                // If no data was read, break the loop after a period of inactivity
+                printf("No more data received\n");
+                break;
+            }
+        } else {
+            printf("Error reading from COM port\n");
+            break;  // Exit on error
+        }
     }
 }
 
+void wait(int milliseconds) {
+    clock_t start_time = clock(); // Get the current time
+    while (clock() < start_time + milliseconds * CLOCKS_PER_SEC / 1000);// Loop until the time has passed
+}
 
 int main() {
     // Open the COM port
-    HANDLE hSerial = CreateFile("COM8", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+
+    const char* commandList[] = {"AT+REBOOT\r\n","AT+LINECFG=1\r\n"};
+    size_t num_elements = sizeof(commandList) / sizeof(commandList[0]);
+
+    HANDLE hSerial = CreateFile("COM9", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
     if (hSerial == INVALID_HANDLE_VALUE) {
         printf("Error opening COM port\n");
         return 1;
@@ -63,29 +91,9 @@ int main() {
     // Configure the serial port
     configureSerialPort(hSerial);
 
-    // Infinite loop to continuously read terminal input and send as AT command
-    char userInput[256];
-    while (1) {
-        printf("Enter AT command (or 'exit' to quit): ");
-        if (fgets(userInput, sizeof(userInput), stdin) == NULL) {
-            printf("Error reading input\n");
-            break;
-        }
-
-        // Remove trailing newline character from input
-        userInput[strcspn(userInput, "\n")] = '\0';
-
-        // If the user types "exit", break the loop and quit
-        if (strcmp(userInput, "exit") == 0) {
-            break;
-        }
-
-        // Append \r\n to the userInput using strcat_s
-        strcat_s(userInput, sizeof(userInput), "\r\n");
-
-        // Send the AT command and display the response
-        sendATCommand(hSerial, (userInput));
-
+    for (int i = 0; i < num_elements; i++) {
+        sendATCommand(hSerial,commandList[i]);
+        recieveResponse(hSerial);
     }
 
     // Close the COM port after communication
